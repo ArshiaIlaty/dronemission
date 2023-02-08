@@ -1,16 +1,12 @@
-// import 'dart:html';
 import 'dart:math';
 import 'package:flutter/material.dart';
-// import 'package:geocoding/geocoding.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:location/location.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:geolocator/geolocator.dart' show Geolocator, Placemark;
 import 'package:flutter_geocoder/geocoder.dart';
-// import 'package:triangulation/triangulation.dart';
-// import 'package:delaunay/delaunay.dart';
-// import 'package:delaunay_triangulation/delaunay_triangulation.dart';
-// import 'package:earcut/earcut.dart';
+import 'package:custom_marker/marker_icon.dart';
+import 'package:dronemission/utils.dart';
 
 void main() => runApp(MyApp());
 
@@ -20,7 +16,36 @@ class Polar {
   Polar(this.r, this.theta);
 }
 
+
+// class WaypointsAlongPolygon {
+//   Future<List<LatLng>> waypointsAlongPolygon(Polygon p, double forwardoffset) async {
+//     List<LatLng> waypoints = [];
+//     List<LatLng> vertices = [];
+//     vertices = p.points;
+//
+//     for (int i = 0; i < vertices.length - 1; i++) {
+//       waypoints.add(vertices[i]);
+//       double length = await Geolocator.distanceBetween(vertices[i].latitude, vertices[i].longitude, vertices[i + 1].latitude, vertices[i + 1].longitude);
+//       double bearing = await Geolocator.bearingBetween(vertices[i].latitude, vertices[i].longitude, vertices[i + 1].latitude, vertices[i + 1].longitude);
+//       // double length = computeDistanceBetween(vertices[i], vertices[i + 1]);
+//       // double heading = bearingBetween(vertices[i], vertices[i + 1]);
+//       int j = 1;
+//
+//       while (j * (forwardoffset) < length) {
+//         waypoints.add(LatLng.computeOffset(vertices[i], j * forwardoffset, heading));
+//         j++;
+//       }
+//     }
+//
+//     return waypoints;
+//   }
+// }
+
+
+
 class MyApp extends StatefulWidget {
+  const MyApp({super.key});
+
   @override
   _MyAppState createState() => _MyAppState();
 }
@@ -32,14 +57,15 @@ class _MyAppState extends State<MyApp> {
   late String _searchString;
   late Position _currentPosition;
   Set<Marker> _markers = {};
+  late Marker _currentLocation;
   int _selectedEdge = -1;
-  late double _newLatitude;
-  late double _newLongitude;
   Set<Polygon> _polygons = {};
-  // List<Polygon> _polygons = [];
-  final List<LatLng> _coordinates = [];
+  Set<Marker> _waypointMarkers = {};
   final Geolocator geolocator = Geolocator();
   final TextEditingController _searchController = TextEditingController();
+  List<Polyline> _polylines = [];
+  static final random = Random();
+
 
   void _onMapCreated(GoogleMapController controller) {
     mapController = controller;
@@ -48,16 +74,19 @@ class _MyAppState extends State<MyApp> {
   @override
   void initState() {
     super.initState();
+    _currentLocation = const Marker(
+      markerId: MarkerId("Current Location"),
+      position:
+        LatLng(0, 0),
+      infoWindow: InfoWindow(title: "Current Location"),
+      // icon: ,
+      visible: true,
+    );
     location.onLocationChanged.listen((LocationData currentLocation) {
       setState(() {
         this.currentLocation = currentLocation;
-        _markers.add(
-          Marker(
-            markerId: MarkerId("Current Location"),
-            position:
-                LatLng(currentLocation.latitude!, currentLocation.longitude!),
-            infoWindow: InfoWindow(title: "Current Location"),
-          ),
+        _currentLocation = _currentLocation.copyWith(
+              positionParam: LatLng(currentLocation.latitude!, currentLocation.longitude!)
         );
         mapController.animateCamera(
           CameraUpdate.newCameraPosition(
@@ -101,78 +130,91 @@ class _MyAppState extends State<MyApp> {
   }
 
   void _onMapLongPress(LatLng latLng) {
-    final markerId = MarkerId(_coordinates.length.toString());
-    _coordinates.add(latLng);
-    _markers.add(Marker(
-      markerId: markerId,
-      position: latLng,
-      icon: BitmapDescriptor.defaultMarker,
-      draggable: true,
-      onDragEnd: (latLng) {
-        final markerList = _markers.toList();
-        final index = markerList.indexWhere((marker) => marker.markerId == markerId);
-        _coordinates[index] = latLng;
-        _updatePolygon();
-      },
-      infoWindow: InfoWindow(
-        title: "Marker ${_coordinates.length}",
-        snippet: "Tap to delete",
-        onTap: () => _onDeletePress(latLng, markerId),
-      ),
-    ));
-    _updatePolygon();
+    setState(() {
+      // Check if a marker with the same markerId already exists
+      final id = (_markers.length + 1).toString();
+      final marker = Marker(
+        markerId: MarkerId(id),
+        position: latLng,
+        icon: BitmapDescriptor.defaultMarker,
+        draggable: true,
+        onDragEnd: (LatLng newPosition) {
+          _markers = Set.from(_markers.map((m) => m.markerId.value == id ? m.copyWith(positionParam: newPosition) : m));
+          _updatePolygon();
+        },
+        infoWindow: InfoWindow(
+          title: "Marker ${id}",
+          snippet: "Tap to delete",
+          onTap: () => _onDeletePress(latLng, id),
+        ),
+      );
+      _markers.add(marker);
+      _updatePolygon();
+    });
   }
 
-  void _onDeletePress(LatLng latLng, MarkerId markerId) {
-    final markerList = _markers.toList();
-    final index1 = markerList.indexWhere((marker) => marker.markerId == markerId);
-    final index = _coordinates.indexWhere((element) => (element.longitude == latLng.longitude) && (element.latitude == latLng.latitude));
+  void _onDeletePress(LatLng latLng, String markerId) {
     setState(() {
-      print("index: ${index}");
-      print("cordinate length ${_coordinates.length.toString()}");
-      _markers.remove(index1);
-      _coordinates.removeAt(index);
-      _polygons = Set.of(_polygons.toList()..removeAt(index));
+      _markers.removeWhere((m) => m.markerId.value == markerId);
     });
     _updatePolygon();
   }
 
   void _updatePolygon() {
     _polygons.clear();
-    print("cordinate length ${_coordinates.length.toString()}");
-    if (_coordinates.length >= 3) {
-      final origin = _coordinates.reduce((value, element) => LatLng(
+    if (_markers.length >= 3) {
+      final test = Set.from(_markers.map((m) => m.position));
+      final origin = test.reduce((value, element) => LatLng(
           (value.latitude + element.latitude) / 2,
           (value.longitude + element.longitude) / 2));
       final polarCoordinates =
-      _coordinates.map((c) => _toPolar(c, origin)).toList();
+      test.map((c) => _toPolar(c, origin)).toList();
       polarCoordinates.sort((a, b) =>
-      a.theta == b.theta ? a.r.compareTo(b.r) : a.theta.compareTo(b.theta));
+          a.theta == b.theta ? a.r.compareTo(b.r) : a.theta.compareTo(b.theta));
       final orderedCoordinates =
-      polarCoordinates.map((p) => _fromPolar(p, origin)).toList();
+          polarCoordinates.map((p) => _fromPolar(p, origin)).toList();
       setState(() {
         _polygons.clear();
         _polygons.add(Polygon(
-          polygonId: PolygonId(_coordinates.length.toString()),
+          polygonId: PolygonId(test.length.toString()),
           points: orderedCoordinates,
           fillColor: Colors.green.withOpacity(0.5),
-          strokeWidth: 5,
+          strokeWidth: 3,
           strokeColor: Colors.green,
         ));
+
+        const double overshoot = 10.0;
+        final waypoints = getWaypointsAlongPolygon(
+            Polygon(
+                polygonId: PolygonId(random.nextInt(10000000).toString()), points: orderedCoordinates
+            ),
+            overshoot);
+        _waypointMarkers.clear();
+        for (var i = 0; i < waypoints.length; i++) {
+          _waypointMarkers.add(
+              Marker(
+                  markerId: MarkerId('Waypoint Marker ' + i.toString()),
+                  position: waypoints[i],
+                icon: BitmapDescriptor.defaultMarker,
+                alpha: 0.5,
+              )
+          );
+        }
+      });
+    } else {
+      setState(() {
+        _polygons.clear();
+        _waypointMarkers.clear();
       });
     }
-    // else {
-    //   setState(() {
-    //     _polygons.clear();
-    //   });
-    // }
   }
 
   int _isOnEdge(LatLng tapCoordinates) {
-    final tolerance = 0.01; // adjust this value as per your requirement
-    for (int i = 0; i < _coordinates.length; i++) {
-      final currentCoordinate = _coordinates[i];
-      final nextCoordinate = _coordinates[(i + 1) % _coordinates.length];
+    final List<LatLng> coordinates  = List.from(_markers.map((m) => m.position));
+    const tolerance = 0.01; // adjust this value as per your requirement
+    for (int i = 0; i < coordinates.length; i++) {
+      final currentCoordinate = coordinates[i];
+      final nextCoordinate = coordinates[(i + 1) % coordinates.length];
       if (tapCoordinates.latitude >
               min(
                       currentCoordinate.latitude, nextCoordinate.latitude) -
@@ -239,9 +281,6 @@ class _MyAppState extends State<MyApp> {
                     TextButton(
                       child: Text("Delete"),
                       onPressed: () {
-                        setState(() {
-                          _coordinates.removeAt(_selectedEdge);
-                        });
                         Navigator.of(context).pop();
                       },
                     ),
@@ -269,12 +308,12 @@ class _MyAppState extends State<MyApp> {
                 );
               },
             ),
-            // IconButton(
-            //   icon: Icon(Icons.search),
-            //   onPressed: () {
-            //     showSearch(context: context, delegate: LocationSearch(_searchLocation));
-            //   },
-            // ),
+            IconButton(
+              icon: Icon(Icons.search),
+              onPressed: () {
+                showSearch(context: context, delegate: LocationSearch(_searchLocation));
+              },
+            ),
 
             // IconButton(
             //   icon: Icon(Icons.edit),
@@ -298,7 +337,8 @@ class _MyAppState extends State<MyApp> {
                     currentLocation?.longitude ?? 0),
                 zoom: 15.0,
               ),
-              markers: _markers,
+              markers: _markers.union({_currentLocation}.union(_waypointMarkers)),
+              // polylines: _polylines,
               polygons: _polygons,
               onLongPress: _onMapLongPress,
               onTap: (LatLng coordinates) {
@@ -307,52 +347,6 @@ class _MyAppState extends State<MyApp> {
                 });
               },
             ),
-            // Positioned(
-            //   top: 0,
-            //   bottom: 0,
-            //   left: 0,
-            //   right: 0,
-            //   child: Align(
-            //     alignment: Alignment.center,
-            //     child: Column(
-            //       mainAxisAlignment: MainAxisAlignment.center,
-            //       children: <Widget>[
-            //         for (final polygon in _polygons)
-            //           InkWell(
-            //             onLongPress: () {
-            //               showDialog(
-            //                 context: context,
-            //                 builder: (_) {
-            //                   return AlertDialog(
-            //                     title: Text('Edit or Delete'),
-            //                     content: Column(
-            //                       mainAxisSize: MainAxisSize.min,
-            //                       children: <Widget>[
-            //                         ElevatedButton(
-            //                           child: Text('Edit'),
-            //                           onPressed: () {
-            //                             // code for editing the polygon here
-            //                           },
-            //                         ),
-            //                         ElevatedButton(
-            //                           child: Text('Delete'),
-            //                           onPressed: () {
-            //                             _polygons.remove(polygon);
-            //                             setState(() {});
-            //                           },
-            //                         ),
-            //                       ],
-            //                     ),
-            //                   );
-            //                 },
-            //               );
-            //             },
-            //             // child: polygon,
-            //           ),
-            //       ],
-            //     ),
-            //   ),
-            // ),
             Positioned(
               bottom: 450,
               right: 15,
@@ -470,37 +464,6 @@ class _MyAppState extends State<MyApp> {
   }
 }
 
-class CustomMarker extends StatelessWidget {
-  final LatLng coordinates;
-  final int index;
-  final Function onDeletePress;
-  final Function onEditPress;
-
-  CustomMarker(
-      {required this.coordinates,
-      required this.index,
-      required this.onDeletePress,
-      required this.onEditPress});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      child: Column(
-        children: <Widget>[
-          Text("Marker $index"),
-          TextButton(
-            child: Text("Delete"),
-            onPressed: () => onDeletePress(index),
-          ),
-          TextButton(
-            child: Text("Edit"),
-            onPressed: () => onEditPress(index),
-          ),
-        ],
-      ),
-    );
-  }
-}
 
 class LocationSearch extends SearchDelegate<String> {
   final Function _searchLocation;
