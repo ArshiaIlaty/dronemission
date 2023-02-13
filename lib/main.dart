@@ -7,6 +7,9 @@ import 'package:geolocator/geolocator.dart' show Geolocator, Placemark;
 import 'package:flutter_geocoder/geocoder.dart';
 import 'package:custom_marker/marker_icon.dart';
 import 'package:dronemission/utils.dart';
+import 'dart:ui';
+
+import 'package:flutter/widgets.dart';
 
 void main() => runApp(MyApp());
 
@@ -15,7 +18,6 @@ class Polar {
   final double theta;
   Polar(this.r, this.theta);
 }
-
 
 // class WaypointsAlongPolygon {
 //   Future<List<LatLng>> waypointsAlongPolygon(Polygon p, double forwardoffset) async {
@@ -41,8 +43,6 @@ class Polar {
 //   }
 // }
 
-
-
 class MyApp extends StatefulWidget {
   const MyApp({super.key});
 
@@ -66,7 +66,6 @@ class _MyAppState extends State<MyApp> {
   List<Polyline> _polylines = [];
   static final random = Random();
 
-
   void _onMapCreated(GoogleMapController controller) {
     mapController = controller;
   }
@@ -76,8 +75,7 @@ class _MyAppState extends State<MyApp> {
     super.initState();
     _currentLocation = const Marker(
       markerId: MarkerId("Current Location"),
-      position:
-        LatLng(0, 0),
+      position: LatLng(0, 0),
       infoWindow: InfoWindow(title: "Current Location"),
       // icon: ,
       visible: true,
@@ -86,8 +84,8 @@ class _MyAppState extends State<MyApp> {
       setState(() {
         this.currentLocation = currentLocation;
         _currentLocation = _currentLocation.copyWith(
-              positionParam: LatLng(currentLocation.latitude!, currentLocation.longitude!)
-        );
+            positionParam:
+                LatLng(currentLocation.latitude!, currentLocation.longitude!));
         mapController.animateCamera(
           CameraUpdate.newCameraPosition(
             CameraPosition(
@@ -139,7 +137,9 @@ class _MyAppState extends State<MyApp> {
         icon: BitmapDescriptor.defaultMarker,
         draggable: true,
         onDragEnd: (LatLng newPosition) {
-          _markers = Set.from(_markers.map((m) => m.markerId.value == id ? m.copyWith(positionParam: newPosition) : m));
+          _markers = Set.from(_markers.map((m) => m.markerId.value == id
+              ? m.copyWith(positionParam: newPosition)
+              : m));
           _updatePolygon();
         },
         infoWindow: InfoWindow(
@@ -167,8 +167,7 @@ class _MyAppState extends State<MyApp> {
       final origin = test.reduce((value, element) => LatLng(
           (value.latitude + element.latitude) / 2,
           (value.longitude + element.longitude) / 2));
-      final polarCoordinates =
-      test.map((c) => _toPolar(c, origin)).toList();
+      final polarCoordinates = test.map((c) => _toPolar(c, origin)).toList();
       polarCoordinates.sort((a, b) =>
           a.theta == b.theta ? a.r.compareTo(b.r) : a.theta.compareTo(b.theta));
       final orderedCoordinates =
@@ -186,19 +185,17 @@ class _MyAppState extends State<MyApp> {
         const double overshoot = 10.0;
         final waypoints = getWaypointsAlongPolygon(
             Polygon(
-                polygonId: PolygonId(random.nextInt(10000000).toString()), points: orderedCoordinates
-            ),
+                polygonId: PolygonId(random.nextInt(10000000).toString()),
+                points: orderedCoordinates),
             overshoot);
         _waypointMarkers.clear();
         for (var i = 0; i < waypoints.length; i++) {
-          _waypointMarkers.add(
-              Marker(
-                  markerId: MarkerId('Waypoint Marker ' + i.toString()),
-                  position: waypoints[i],
-                icon: BitmapDescriptor.defaultMarker,
-                alpha: 0.5,
-              )
-          );
+          _waypointMarkers.add(Marker(
+            markerId: MarkerId('Waypoint Marker ' + i.toString()),
+            position: waypoints[i],
+            icon: BitmapDescriptor.defaultMarker,
+            alpha: 0.5,
+          ));
         }
       });
     } else {
@@ -210,7 +207,7 @@ class _MyAppState extends State<MyApp> {
   }
 
   int _isOnEdge(LatLng tapCoordinates) {
-    final List<LatLng> coordinates  = List.from(_markers.map((m) => m.position));
+    final List<LatLng> coordinates = List.from(_markers.map((m) => m.position));
     const tolerance = 0.01; // adjust this value as per your requirement
     for (int i = 0; i < coordinates.length; i++) {
       final currentCoordinate = coordinates[i];
@@ -311,7 +308,9 @@ class _MyAppState extends State<MyApp> {
             IconButton(
               icon: Icon(Icons.search),
               onPressed: () {
-                showSearch(context: context, delegate: LocationSearch(_searchLocation));
+                showSearch(
+                    context: context,
+                    delegate: LocationSearch(_searchLocation));
               },
             ),
 
@@ -337,7 +336,8 @@ class _MyAppState extends State<MyApp> {
                     currentLocation?.longitude ?? 0),
                 zoom: 15.0,
               ),
-              markers: _markers.union({_currentLocation}.union(_waypointMarkers)),
+              markers:
+                  _markers.union({_currentLocation}.union(_waypointMarkers)),
               // polylines: _polylines,
               polygons: _polygons,
               onLongPress: _onMapLongPress,
@@ -381,7 +381,6 @@ class _MyAppState extends State<MyApp> {
                 ),
               ),
             ),
-
             Positioned(
               bottom: 450,
               left: 15,
@@ -427,7 +426,6 @@ class _MyAppState extends State<MyApp> {
                     ],
                   )),
             ),
-
             Positioned(
               top: 10,
               left: 10,
@@ -463,7 +461,6 @@ class _MyAppState extends State<MyApp> {
     );
   }
 }
-
 
 class LocationSearch extends SearchDelegate<String> {
   final Function _searchLocation;
