@@ -3,10 +3,11 @@ import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:location/location.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:geolocator/geolocator.dart' show Geolocator, Placemark;
+import 'package:geolocator/geolocator.dart' show Geolocator;
 import 'package:flutter_geocoder/geocoder.dart';
 import 'package:custom_marker/marker_icon.dart';
 import 'package:dronemission/utils.dart';
+import 'package:dronemission/pathing.dart';
 
 // Main function to run the MyApp widget
 void main() => runApp(const MyApp());
@@ -18,7 +19,7 @@ class Polar {
   Polar(this.r, this.theta);
 }
 
-
+// MyApp widget which extends the StatefulWidget class
 class MyApp extends StatefulWidget {
   const MyApp({super.key});
 
@@ -30,42 +31,70 @@ class MyApp extends StatefulWidget {
 class _MyAppState extends State<MyApp> {
   // Controller for the Google Map widget
   late GoogleMapController mapController;
+
+  // Location class instance
   Location location = Location();
+
+  // Current location data
   LocationData? currentLocation;
+
+  // String for search query
   late String _searchString;
+
+  // Current position in lat, long coordinates
   late Position _currentPosition;
+
+  // Set of markers for the map
   Set<Marker> _markers = {};
+
+  // Marker for the current location
   late Marker _currentLocation;
+
+  // Index of the selected edge
   int _selectedEdge = -1;
-  Set<Polygon> _polygons = {};
+
+  // Set of polyggon shapes on the map
+  final Set<Polygon> _polygons = {};
+
+  // Set of markers for waypoints
   Set<Marker> _waypointMarkers = {};
+
+  // Geolocator instance for location services
   final Geolocator geolocator = Geolocator();
+
+  // TextEditingController for the search bar
   final TextEditingController _searchController = TextEditingController();
+
+  // List of polylines on the map
   List<Polyline> _polylines = [];
+
+  // Random number generator instance
   static final random = Random();
 
-
+  // Callback function when the map is created
   void _onMapCreated(GoogleMapController controller) {
     mapController = controller;
   }
 
+  // Override of the initState method to initialize the widget
   @override
   void initState() {
     super.initState();
+    // Initialize the current location marker
     _currentLocation = const Marker(
       markerId: MarkerId("Current Location"),
-      position:
-        LatLng(0, 0),
+      position: LatLng(0, 0),
       infoWindow: InfoWindow(title: "Current Location"),
-      // icon: ,
       visible: true,
     );
+
+    // Listen for changes in the location and update the marker
     location.onLocationChanged.listen((LocationData currentLocation) {
       setState(() {
         this.currentLocation = currentLocation;
         _currentLocation = _currentLocation.copyWith(
-              positionParam: LatLng(currentLocation.latitude!, currentLocation.longitude!)
-        );
+            positionParam:
+                LatLng(currentLocation.latitude!, currentLocation.longitude!));
         mapController.animateCamera(
           CameraUpdate.newCameraPosition(
             CameraPosition(
@@ -80,11 +109,20 @@ class _MyAppState extends State<MyApp> {
   }
 
   void _searchLocation() async {
+    // Get the user's query from the text controller
     final query = _searchController.text;
+
+    // Check if the query is not empty
     if (query.isNotEmpty) {
+      // Find addresses from the query using the geocoder library
       final results = await Geocoder.local.findAddressesFromQuery(query);
+
+      // If the results list is not empty
       if (results.isNotEmpty) {
+        // Get the first result
         final first = results.first;
+
+        // Animate the camera to the location of the first result
         mapController.animateCamera(
           CameraUpdate.newCameraPosition(
             CameraPosition(
@@ -99,15 +137,19 @@ class _MyAppState extends State<MyApp> {
   }
 
   getUserLocation() async {
+    // Get the user's current location
     var location = Location();
     var permission = await location.requestPermission();
     var userLocation = await location.getLocation();
+
+    // Set the current position state to the user's current location
     setState(() {
       _currentPosition = userLocation as Position;
     });
   }
 
   void _onMapLongPress(LatLng latLng) {
+    // Set state to add a marker on the map when the map is long pressed
     setState(() {
       // Check if a marker with the same markerId already exists
       final id = (_markers.length + 1).toString();
@@ -116,13 +158,17 @@ class _MyAppState extends State<MyApp> {
         position: latLng,
         icon: BitmapDescriptor.defaultMarker,
         draggable: true,
+        // Update the polygon if the marker is dragged
         onDragEnd: (LatLng newPosition) {
-          _markers = Set.from(_markers.map((m) => m.markerId.value == id ? m.copyWith(positionParam: newPosition) : m));
+          _markers = Set.from(_markers.map((m) => m.markerId.value == id
+              ? m.copyWith(positionParam: newPosition)
+              : m));
           _updatePolygon();
         },
         infoWindow: InfoWindow(
           title: "Marker ${id}",
           snippet: "Tap to delete",
+          // Delete the marker if the info window is tapped
           onTap: () => _onDeletePress(latLng, id),
         ),
       );
@@ -132,6 +178,7 @@ class _MyAppState extends State<MyApp> {
   }
 
   void _onDeletePress(LatLng latLng, String markerId) {
+    // Set state to remove a marker when its info window is tapped
     setState(() {
       _markers.removeWhere((m) => m.markerId.value == markerId);
     });
@@ -139,18 +186,31 @@ class _MyAppState extends State<MyApp> {
   }
 
   void _updatePolygon() {
+    // Clear the existing polygon
     _polygons.clear();
+
+    // If there are at least three markers, update the polygon
     if (_markers.length >= 3) {
+      // Get a set of the marker positions
       final test = Set.from(_markers.map((m) => m.position));
+
+      // Calculate the origin of the polygon
       final origin = test.reduce((value, element) => LatLng(
           (value.latitude + element.latitude) / 2,
           (value.longitude + element.longitude) / 2));
-      final polarCoordinates =
-      test.map((c) => _toPolar(c, origin)).toList();
+
+      // Convert the marker positions to polar coordinates
+      final polarCoordinates = test.map((c) => _toPolar(c, origin)).toList();
+
+      // Sort the polar coordinates based on the angle and distance
       polarCoordinates.sort((a, b) =>
           a.theta == b.theta ? a.r.compareTo(b.r) : a.theta.compareTo(b.theta));
+
+      // Convert the sorted polar coordinates back to LatLng coordinates
       final orderedCoordinates =
           polarCoordinates.map((p) => _fromPolar(p, origin)).toList();
+
+      // Update the polygon with the ordered LatLng coordinates
       setState(() {
         _polygons.clear();
         _polygons.add(Polygon(
@@ -161,25 +221,39 @@ class _MyAppState extends State<MyApp> {
           strokeColor: Colors.green,
         ));
 
+        // Add waypoint markers along the polygon
         const double overshoot = 10.0;
         final waypoints = getWaypointsAlongPolygon(
             Polygon(
-                polygonId: PolygonId(random.nextInt(10000000).toString()), points: orderedCoordinates
-            ),
+                polygonId: PolygonId(random.nextInt(10000000).toString()),
+                points: orderedCoordinates),
             overshoot);
         _waypointMarkers.clear();
         for (var i = 0; i < waypoints.length; i++) {
-          _waypointMarkers.add(
-              Marker(
-                  markerId: MarkerId('Waypoint Marker ' + i.toString()),
-                  position: waypoints[i],
-                icon: BitmapDescriptor.defaultMarker,
-                alpha: 0.5,
-              )
-          );
+          _waypointMarkers.add(Marker(
+            markerId: MarkerId('Waypoint Marker ' + i.toString()),
+            position: waypoints[i],
+            icon: BitmapDescriptor.defaultMarker,
+            alpha: 0.0,
+          ));
+        }
+
+        final path = findPath(_polygons.first, 20);
+        final polyline = Polyline(
+          polylineId: const PolylineId('1'),
+          color: Colors.red,
+          width: 1,
+          jointType: JointType.round,
+          points:  path,
+        );
+        if (_polylines.isEmpty) {
+          _polylines.add(polyline);
+        } else {
+          _polylines[0] = polyline;
         }
       });
     } else {
+      // If there are less than three markers, clear the polygon and waypoint markers
       setState(() {
         _polygons.clear();
         _waypointMarkers.clear();
@@ -187,12 +261,15 @@ class _MyAppState extends State<MyApp> {
     }
   }
 
+// Check if a given LatLng coordinate is on the edge of the polygon
   int _isOnEdge(LatLng tapCoordinates) {
-    final List<LatLng> coordinates  = List.from(_markers.map((m) => m.position));
+    final List<LatLng> coordinates = List.from(_markers.map((m) => m.position));
     const tolerance = 0.01; // adjust this value as per your requirement
     for (int i = 0; i < coordinates.length; i++) {
       final currentCoordinate = coordinates[i];
       final nextCoordinate = coordinates[(i + 1) % coordinates.length];
+
+      // Check if the tap coordinates are within the bounds of the current and next coordinate
       if (tapCoordinates.latitude >
               min(
                       currentCoordinate.latitude, nextCoordinate.latitude) -
@@ -215,6 +292,8 @@ class _MyAppState extends State<MyApp> {
                     tapCoordinates.latitude)
                 .abs() /
             sqrt(1 + slope * slope);
+
+        // Check if the distance between the tap coordinates and the edge is within the tolerance
         if (distance < tolerance) {
           return i;
         }
@@ -223,6 +302,7 @@ class _MyAppState extends State<MyApp> {
     return -1;
   }
 
+  //The _toPolar function converts a point in cartesian coordinate to polar coordinate.
   Polar _toPolar(LatLng point, LatLng origin) {
     final dx = point.longitude - origin.longitude;
     final dy = point.latitude - origin.latitude;
@@ -231,6 +311,7 @@ class _MyAppState extends State<MyApp> {
     return Polar(r, theta);
   }
 
+  //The _fromPolar function converts a point in polar coordinate to cartesian coordinate.
   LatLng _fromPolar(Polar polar, LatLng origin) {
     final x = polar.r * cos(polar.theta) + origin.longitude;
     final y = polar.r * sin(polar.theta) + origin.latitude;
@@ -249,15 +330,15 @@ class _MyAppState extends State<MyApp> {
               showDialog(
                 context: context,
                 builder: (_) => AlertDialog(
-                  title: Text("Delete Edge"),
-                  content: Text("Are you sure you want to delete this edge?"),
+                  title: const Text("Delete Edge"),
+                  content: const Text("Are you sure you want to delete this edge?"),
                   actions: <Widget>[
                     TextButton(
-                      child: Text("Cancel"),
+                      child: const Text("Cancel"),
                       onPressed: () => Navigator.of(context).pop(),
                     ),
                     TextButton(
-                      child: Text("Delete"),
+                      child: const Text("Delete"),
                       onPressed: () {
                         Navigator.of(context).pop();
                       },
@@ -267,13 +348,13 @@ class _MyAppState extends State<MyApp> {
               );
             }
           },
-          child: Icon(Icons.delete),
+          child: const Icon(Icons.delete),
         ),
         appBar: AppBar(
-          title: Text('Google Maps'),
+          title: const Text('Google Maps'),
           actions: <Widget>[
             IconButton(
-              icon: Icon(Icons.my_location),
+              icon: const Icon(Icons.my_location),
               onPressed: () {
                 mapController.animateCamera(
                   CameraUpdate.newCameraPosition(
@@ -287,9 +368,11 @@ class _MyAppState extends State<MyApp> {
               },
             ),
             IconButton(
-              icon: Icon(Icons.search),
+              icon: const Icon(Icons.search),
               onPressed: () {
-                showSearch(context: context, delegate: LocationSearch(_searchLocation));
+                showSearch(
+                    context: context,
+                    delegate: LocationSearch(_searchLocation));
               },
             ),
 
@@ -318,6 +401,7 @@ class _MyAppState extends State<MyApp> {
               markers:
                   _markers.union({_currentLocation}.union(_waypointMarkers)),
               polygons: _polygons,
+              polylines: _polylines.toSet(),
               onLongPress: _onMapLongPress,
               onTap: (LatLng coordinates) {
                 setState(() {
@@ -336,24 +420,24 @@ class _MyAppState extends State<MyApp> {
                       onPressed: () {
                         //start button logic
                       },
-                      icon: Icon(Icons.play_arrow),
-                      label: Text("Start"),
+                      icon: const Icon(Icons.play_arrow),
+                      label: const Text("Start"),
                     ),
-                    SizedBox(width: 10),
+                    const SizedBox(width: 10),
                     ElevatedButton.icon(
                       onPressed: () {
                         //stop button logic
                       },
-                      icon: Icon(Icons.stop),
-                      label: Text("Stop"),
+                      icon: const Icon(Icons.stop),
+                      label: const Text("Stop"),
                     ),
-                    SizedBox(width: 10),
+                    const SizedBox(width: 10),
                     ElevatedButton.icon(
                       onPressed: () {
                         //upload button logic
                       },
-                      icon: Icon(Icons.cloud_upload),
-                      label: Text("Upload"),
+                      icon: const Icon(Icons.cloud_upload),
+                      label: const Text("Upload"),
                     ),
                   ],
                 ),
@@ -368,36 +452,36 @@ class _MyAppState extends State<MyApp> {
                   child: Column(
                     children: <Widget>[
                       ElevatedButton.icon(
-                        label: Text("Go Home"),
-                        icon: Icon(Icons.home),
+                        label: const Text("Go Home"),
+                        icon: const Icon(Icons.home),
                         onPressed: () {
                           // code to handle "Go Home" button press
                         },
                       ),
                       ElevatedButton.icon(
-                        label: Text("Take off"),
-                        icon: Icon(Icons.airplanemode_active),
+                        label: const Text("Take off"),
+                        icon: const Icon(Icons.airplanemode_active),
                         onPressed: () {
                           // code to handle "Take off" button press
                         },
                       ),
                       ElevatedButton.icon(
-                        label: Text("Terrain"),
-                        icon: Icon(Icons.terrain),
+                        label: const Text("Terrain"),
+                        icon: const Icon(Icons.terrain),
                         onPressed: () {
                           // code to handle "Terrain" button press
                         },
                       ),
                       ElevatedButton.icon(
-                        label: Text("Bar"),
-                        icon: Icon(Icons.terrain),
+                        label: const Text("Bar"),
+                        icon: const Icon(Icons.terrain),
                         onPressed: () {
                           // code to handle "Bar" button press
                         },
                       ),
                       ElevatedButton.icon(
-                        label: Text("Setting"),
-                        icon: Icon(Icons.settings),
+                        label: const Text("Setting"),
+                        icon: const Icon(Icons.settings),
                         onPressed: () {
                           // code to handle "Setting" button press
                         },
@@ -465,9 +549,9 @@ class _MyAppState extends State<MyApp> {
                   decoration: InputDecoration(
                     hintText: "Search for a location",
                     border: InputBorder.none,
-                    contentPadding: EdgeInsets.only(left: 15, top: 15),
+                    contentPadding: const EdgeInsets.only(left: 15, top: 15),
                     suffixIcon: IconButton(
-                      icon: Icon(Icons.search),
+                      icon: const Icon(Icons.search),
                       onPressed: () {
                         showSearch(
                             context: context,
@@ -567,7 +651,7 @@ class LocationSearch extends SearchDelegate<String> {
   List<Widget> buildActions(BuildContext context) {
     return [
       IconButton(
-        icon: Icon(Icons.clear),
+        icon: const Icon(Icons.clear),
         onPressed: () {
           query = '';
         },
@@ -578,7 +662,7 @@ class LocationSearch extends SearchDelegate<String> {
   @override
   Widget buildLeading(BuildContext context) {
     return IconButton(
-      icon: Icon(Icons.arrow_back),
+      icon: const Icon(Icons.arrow_back),
       onPressed: () {
         close(context, '');
       },
