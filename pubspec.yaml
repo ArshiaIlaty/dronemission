@@ -33,7 +33,7 @@ dependencies:
     sdk: flutter
 
   location: ^4.2.0
-  dio: ^4.0.6
+  dio: ^5.0.3
   flutter_polyline_points: ^1.0.0
   google_maps_flutter: ^2.1.10
   geolocator: ^9.0.1
@@ -46,17 +46,26 @@ dependencies:
 #  triangulation: ^1.0.0
 #  poly2tri: ^0.1.0
 #  earcut: ^3.0.0
-
-  firebase_auth: ^3.6.2
+  hive: ^2.2.3
+  hive_flutter: ^1.1.0
+  url_launcher: ^6.1.10
+  firebase_auth: ^4.3.0
+#  firebase_core_platform_interface: 4.5.1
+#  firebase_messaging: ^13.0.4
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
+  timezone: ^0.9.1
+  flutter_bloc: ^8.1.2
+  bloc: ^8.1.1
 
   google_maps_flutter_web: ^0.4.0+1
   http: ^0.13.5
   json_serializable: ^6.3.1
   json_annotation: ^4.6.0
   tuple: ^2.0.1
+  flutter_otp_text_field: ^1.1.1
+  dartdoc: ^6.2.1
 dev_dependencies:
   flutter_test:
     sdk: flutter

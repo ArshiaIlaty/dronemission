@@ -1,6 +1,9 @@
 import 'dart:math';
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:hive/hive.dart';
+import 'package:hive_flutter/adapters.dart';
 import 'package:location/location.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:geolocator/geolocator.dart' show Geolocator;
@@ -8,6 +11,32 @@ import 'package:flutter_geocoder/geocoder.dart';
 import 'package:custom_marker/marker_icon.dart';
 import 'package:dronemission/utils.dart';
 import 'package:dronemission/pathing.dart';
+import 'package:dronemission/otp_screen.dart';
+import 'clock_widget.dart';
+// import 'package:timezone/timezone.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:dartdoc/dartdoc.dart';
+
+// import 'package:hive/hive.dart';
+// import 'package:hive_flutter/hive_flutter.dart';
+// import 'package:url_launcher/url_launcher.dart';
+
+// import 'package:cloud_firestore_web/cloud_firestore_web.dart';
+
+// initializing hive
+
+// void main() async {
+//   await Hive.initFlutter();
+//   runApp(const MyApp());
+// }
+
+// this part of code should be in some parts of the app
+// Use Hive to store and retrieve data by opening boxes and adding or getting values from them.
+
+// await Hive.openBox('myBox');
+// var box = Hive.box('myBox');
+// box.put('key', 'value');
+// var value = box.get('key');
 
 // Main function to run the MyApp widget
 void main() => runApp(const MyApp());
@@ -76,6 +105,30 @@ class _MyAppState extends State<MyApp> {
     mapController = controller;
   }
 
+  // final dio = Dio();
+  //
+  // void getHttp() async {
+  //   Response response;
+  //   response = await dio.get('https://mineexchange.com/drone');
+  //   print(response);
+  //
+  //   //Downloading a file
+  //   response = await dio.download(
+  //     'https://pub.dev/',
+  //     (await getTemporaryDirectory()).path + 'pub.html',);
+  //   //Performing a POST request in order to send the result file:
+  //   response = await dio.post('/test', data: {'id': 12, 'name': 'dio'});
+  //
+  //   //Listening the uploading progress:
+  //   response = await dio.post(
+  //     'https://www.dtworkroom.com/doris/1/2.0.0/test',
+  //     data: {'aa': 'bb' * 22},
+  //     onSendProgress: (int sent, int total) {
+  //       print('$sent $total');
+  //     },
+  //   );
+  // }
+
   // Override of the initState method to initialize the widget
   @override
   void initState() {
@@ -127,7 +180,7 @@ class _MyAppState extends State<MyApp> {
           CameraUpdate.newCameraPosition(
             CameraPosition(
               target: LatLng(
-                  first.coordinates.latitude!!, first.coordinates.longitude!!),
+                  first.coordinates.latitude!, first.coordinates.longitude!),
               zoom: 15.0,
             ),
           ),
@@ -244,7 +297,7 @@ class _MyAppState extends State<MyApp> {
           color: Colors.red,
           width: 1,
           jointType: JointType.round,
-          points:  path,
+          points: path,
         );
         if (_polylines.isEmpty) {
           _polylines.add(polyline);
@@ -331,7 +384,8 @@ class _MyAppState extends State<MyApp> {
                 context: context,
                 builder: (_) => AlertDialog(
                   title: const Text("Delete Edge"),
-                  content: const Text("Are you sure you want to delete this edge?"),
+                  content:
+                      const Text("Are you sure you want to delete this edge?"),
                   actions: <Widget>[
                     TextButton(
                       child: const Text("Cancel"),
@@ -406,9 +460,21 @@ class _MyAppState extends State<MyApp> {
               onTap: (LatLng coordinates) {
                 setState(() {
                   _selectedEdge = _isOnEdge(coordinates);
+                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                    content: const Text('snack'),
+                    duration: const Duration(seconds: 1),
+                    action: SnackBarAction(
+                        label: 'ACTION',
+                        onPressed: () {
+                          _selectedEdge = _isOnEdge(coordinates);
+                        }),
+                  ));
                 });
+                child:
+                const Text('SHOW SNACK');
               },
             ),
+            ClockWidget(),
             Positioned(
               bottom: 450,
               right: 15,
@@ -443,7 +509,6 @@ class _MyAppState extends State<MyApp> {
                 ),
               ),
             ),
-
             Positioned(
               bottom: 450,
               left: 15,
@@ -678,5 +743,12 @@ class LocationSearch extends SearchDelegate<String> {
   @override
   Widget buildSuggestions(BuildContext context) {
     return Container();
+  }
+}
+
+class MyScreenWidget extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return OptScreen(); // Replace MyScreen with the name of your screen widget
   }
 }
