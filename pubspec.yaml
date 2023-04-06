@@ -65,7 +65,7 @@ dependencies:
   json_annotation: ^4.6.0
   tuple: ^2.0.1
   flutter_otp_text_field: ^1.1.1
-  dartdoc: ^6.2.1
+  dartdoc: any
 dev_dependencies:
   flutter_test:
     sdk: flutter

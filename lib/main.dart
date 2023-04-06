@@ -1,5 +1,4 @@
 import 'dart:math';
-import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:hive/hive.dart';
@@ -12,10 +11,11 @@ import 'package:custom_marker/marker_icon.dart';
 import 'package:dronemission/utils.dart';
 import 'package:dronemission/pathing.dart';
 import 'package:dronemission/otp_screen.dart';
+import 'package:dronemission/marker_factory.dart';
 import 'clock_widget.dart';
 // import 'package:timezone/timezone.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:dartdoc/dartdoc.dart';
+//import 'package:dartdoc/dartdoc.dart';
 
 // import 'package:hive/hive.dart';
 // import 'package:hive_flutter/hive_flutter.dart';
@@ -134,12 +134,7 @@ class _MyAppState extends State<MyApp> {
   void initState() {
     super.initState();
     // Initialize the current location marker
-    _currentLocation = const Marker(
-      markerId: MarkerId("Current Location"),
-      position: LatLng(0, 0),
-      infoWindow: InfoWindow(title: "Current Location"),
-      visible: true,
-    );
+    _currentLocation = MarkerFactory.createMarker(LatLng(0, 0), MarkerType.user);
 
     // Listen for changes in the location and update the marker
     location.onLocationChanged.listen((LocationData currentLocation) {
@@ -205,25 +200,16 @@ class _MyAppState extends State<MyApp> {
     // Set state to add a marker on the map when the map is long pressed
     setState(() {
       // Check if a marker with the same markerId already exists
-      final id = (_markers.length + 1).toString();
-      final marker = Marker(
-        markerId: MarkerId(id),
-        position: latLng,
-        icon: BitmapDescriptor.defaultMarker,
-        draggable: true,
-        // Update the polygon if the marker is dragged
-        onDragEnd: (LatLng newPosition) {
-          _markers = Set.from(_markers.map((m) => m.markerId.value == id
-              ? m.copyWith(positionParam: newPosition)
-              : m));
-          _updatePolygon();
-        },
-        infoWindow: InfoWindow(
-          title: "Marker ${id}",
-          snippet: "Tap to delete",
-          // Delete the marker if the info window is tapped
-          onTap: () => _onDeletePress(latLng, id),
-        ),
+      final marker = MarkerFactory.createMarker(
+        latLng,
+        MarkerType.vertex,
+              onDragEnd: (LatLng newPosition, String id) {
+            _markers = Set.from(_markers.map((m) => m.markerId.value == id
+                ? m.copyWith(positionParam: newPosition)
+                : m));
+            _updatePolygon();
+          },
+          onDeletePress: _onDeletePress
       );
       _markers.add(marker);
       _updatePolygon();
@@ -283,12 +269,7 @@ class _MyAppState extends State<MyApp> {
             overshoot);
         _waypointMarkers.clear();
         for (var i = 0; i < waypoints.length; i++) {
-          _waypointMarkers.add(Marker(
-            markerId: MarkerId('Waypoint Marker ' + i.toString()),
-            position: waypoints[i],
-            icon: BitmapDescriptor.defaultMarker,
-            alpha: 0.0,
-          ));
+          _waypointMarkers.add(MarkerFactory.createMarker(waypoints[i], MarkerType.path));
         }
 
         final path = findPath(_polygons.first, 20);
