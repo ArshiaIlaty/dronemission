@@ -12,6 +12,7 @@ import 'package:dronemission/utils.dart';
 import 'package:dronemission/pathing.dart';
 import 'package:dronemission/otp_screen.dart';
 import 'package:dronemission/marker_factory.dart';
+import 'package:dronemission/slidebar_widget.dart';
 import 'clock_widget.dart';
 // import 'package:timezone/timezone.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -451,11 +452,14 @@ class _MyAppState extends State<MyApp> {
                         }),
                   ));
                 });
-                child:
-                const Text('SHOW SNACK');
               },
             ),
-            ClockWidget(),
+            Column(
+              children: [
+                SizedBox(height:100, width: 200,child: ClockWidget()),
+                SizedBox(height:100, width: 500, child: SliderExample()),
+              ],
+            ),
             Positioned(
               bottom: 450,
               right: 15,
@@ -610,79 +614,6 @@ class _MyAppState extends State<MyApp> {
             ),
           ],
         ),
-      ),
-    );
-  }
-}
-
-class OverlapPage extends StatefulWidget {
-  const OverlapPage({super.key});
-
-  @override
-  _OverlapPageState createState() => _OverlapPageState();
-}
-
-class _OverlapPageState extends State<OverlapPage> {
-  double _speedValue = 2.0;
-  double _altitudeValue = 2.0;
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Container(
-            margin: const EdgeInsets.all(20.0),
-            child: ElevatedButton(
-              onPressed: () {
-                showModalBottomSheet(
-                    context: context,
-                    builder: (context) {
-                      return Container(
-                        padding: const EdgeInsets.all(20.0),
-                        child: Column(
-                          children: [
-                            const Text("Speed"),
-                            Slider(
-                              min: 2.0,
-                              max: 15.0,
-                              value: _speedValue,
-                              onChanged: (newValue) {
-                                setState(() {
-                                  _speedValue = newValue;
-                                });
-                              },
-                            ),
-                            const Text("Altitude"),
-                            Slider(
-                              min: 2.0,
-                              max: 500.0,
-                              value: _altitudeValue,
-                              onChanged: (newValue) {
-                                setState(() {
-                                  _altitudeValue = newValue;
-                                });
-                              },
-                            ),
-                            const SizedBox(
-                              height: 20.0,
-                            ),
-                            ElevatedButton(
-                              child: const Text("Close"),
-                              onPressed: () {
-                                Navigator.pop(context);
-                              },
-                            ),
-                          ],
-                        ),
-                      );
-                    });
-              },
-              child: const Text("Overlap"),
-            ),
-          ),
-        ],
       ),
     );
   }
