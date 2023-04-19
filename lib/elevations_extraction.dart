@@ -61,25 +61,6 @@ void demLongitude(List<Map<String, dynamic>> data) {
   }
 }
 
-
-List<double> demLat = []; // Initialize empty list for latitude values
-List<double> demLong = []; // Initialize empty list for longitude values
-
-// Loop through each entry in `dem` map and add latitude and longitude values to their respective lists
-dem.forEach((key, value) {
-  demLat.add(key.latitude);
-  demLong.add(key.longitude);
-});
-
-// Remove any duplicate values from `demLat` and `demLong`
-demLat = demLat.toSet().toList();
-demLong = demLong.toSet().toList();
-
-// Sort `demLat` and `demLong` in ascending order
-demLat.sort();
-demLong.sort();
-
-
 // Algorithm 1: Elevations_Extraction
 List<double> elevationsExtraction(
     Map dem, Polygon Polygon, List<LatLng> waypoints) {
@@ -90,20 +71,21 @@ List<double> elevationsExtraction(
   List<double> Long = [];
 
   // Step 5: LATLNG_BOUNDS
-  LatLngBounds bounds = Polygon.bounds;    
+  LatLngBounds bounds = LATLNG_BOUNDS(polygon);    
   // LatLng_Bounds(Polygon.vertices);
   List<double> indexboundsLat = linearSearch(
       arrLat, bounds.southwest.latitude, bounds.northeast.latitude);
   List<double> indexboundsLong = linearSearch(
       arrLong, bounds.southwest.longitude, bounds.northeast.longitude);
 
-  for (double i = 0.0; i < indexboundsLat.length; i++) {
-    Lat.add(arrLat[indexboundsLat[i]]);
+  for (int i = 0; i < indexboundsLat.length; i++) {
+    Lat.add(arrLat[indexboundsLat[i].toInt()]);
   }
 
-  for (double i = 0; i < indexboundsLong.length; i++) {
-    Long.add(arrLong[indexboundsLong[i]]);
-  }
+for (int i = 0; i < indexboundsLong.length; i++) {
+  Long.add(arrLong[indexboundsLong[i].toInt()]);
+}
+
 
   for (int i = 0; i < waypoints.length; i++) {
     double minlat = waypoints[i].latitude - 0.00005;
@@ -135,7 +117,7 @@ List<double> elevationsExtraction(
 }
 
 // Algorithm 2: LINEARSEARCH
-List<double> linearSearch(List<double> arrLat, double Minlat, double Maxlat) {
+List<double> linearSearch(List<double> arrLat, double min, double max) {
   int n = arrLat.length;
   int i = 0;
   int j = 0;
