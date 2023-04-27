@@ -14,6 +14,9 @@ import 'package:dronemission/otp_screen.dart';
 import 'package:dronemission/marker_factory.dart';
 import 'package:dronemission/slidebar_widget.dart';
 import 'clock_widget.dart';
+import 'package:flutter_animate/flutter_animate.dart';
+import 'package:draggable_widget/draggable_widget.dart';
+import 'package:video_thumbnail/video_thumbnail.dart';
 // import 'package:timezone/timezone.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 //import 'package:dartdoc/dartdoc.dart';
@@ -135,7 +138,8 @@ class _MyAppState extends State<MyApp> {
   void initState() {
     super.initState();
     // Initialize the current location marker
-    _currentLocation = MarkerFactory.createMarker(LatLng(0, 0), MarkerType.user);
+    _currentLocation =
+        MarkerFactory.createMarker(LatLng(0, 0), MarkerType.user);
 
     // Listen for changes in the location and update the marker
     location.onLocationChanged.listen((LocationData currentLocation) {
@@ -201,17 +205,13 @@ class _MyAppState extends State<MyApp> {
     // Set state to add a marker on the map when the map is long pressed
     setState(() {
       // Check if a marker with the same markerId already exists
-      final marker = MarkerFactory.createMarker(
-        latLng,
-        MarkerType.vertex,
-              onDragEnd: (LatLng newPosition, String id) {
-            _markers = Set.from(_markers.map((m) => m.markerId.value == id
-                ? m.copyWith(positionParam: newPosition)
-                : m));
-            _updatePolygon();
-          },
-          onDeletePress: _onDeletePress
-      );
+      final marker = MarkerFactory.createMarker(latLng, MarkerType.vertex,
+          onDragEnd: (LatLng newPosition, String id) {
+        _markers = Set.from(_markers.map((m) => m.markerId.value == id
+            ? m.copyWith(positionParam: newPosition)
+            : m));
+        _updatePolygon();
+      }, onDeletePress: _onDeletePress);
       _markers.add(marker);
       _updatePolygon();
     });
@@ -270,7 +270,8 @@ class _MyAppState extends State<MyApp> {
             overshoot);
         _waypointMarkers.clear();
         for (var i = 0; i < waypoints.length; i++) {
-          _waypointMarkers.add(MarkerFactory.createMarker(waypoints[i], MarkerType.path));
+          _waypointMarkers
+              .add(MarkerFactory.createMarker(waypoints[i], MarkerType.path));
         }
 
         final path = findPath(_polygons.first, 20);
@@ -456,8 +457,8 @@ class _MyAppState extends State<MyApp> {
             ),
             Column(
               children: [
-                SizedBox(height:100, width: 200,child: ClockWidget()),
-                SizedBox(height:100, width: 500, child: SliderExample()),
+                SizedBox(height: 100, width: 200, child: ClockWidget()),
+                SizedBox(height: 100, width: 500, child: SliderExample()),
               ],
             ),
             Positioned(

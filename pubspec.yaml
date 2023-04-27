@@ -67,6 +67,9 @@ dependencies:
   flutter_otp_text_field: ^1.1.1
   dartdoc: any
   buffer: ^1.2.0
+  flutter_animate: ^4.1.1+1
+  draggable_widget: ^2.0.0
+  video_thumbnail: ^0.5.3
 dev_dependencies:
   flutter_test:
     sdk: flutter
