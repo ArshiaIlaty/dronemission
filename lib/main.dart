@@ -21,6 +21,8 @@ import 'package:video_thumbnail/video_thumbnail.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 //import 'package:dartdoc/dartdoc.dart';
 
+import 'package:device_preview/device_preview.dart';
+
 // import 'package:hive/hive.dart';
 // import 'package:hive_flutter/hive_flutter.dart';
 // import 'package:url_launcher/url_launcher.dart';
@@ -388,7 +390,13 @@ class _MyAppState extends State<MyApp> {
           child: const Icon(Icons.delete),
         ),
         appBar: AppBar(
-          title: const Text('Google Maps'),
+          //using animate widget to animate the title
+          title: Animate(effects: [
+            FadeEffect(duration: 10000.ms, delay: 500.ms, begin: 0.5),
+            ScaleEffect(
+              duration: 10000.ms,
+            ),
+          ], child: Text('Google Maps')),
           actions: <Widget>[
             IconButton(
               icon: const Icon(Icons.my_location),
