@@ -70,6 +70,8 @@ dependencies:
   flutter_animate: ^4.1.1+1
   draggable_widget: ^2.0.0
   video_thumbnail: ^0.5.3
+  path_provider: ^2.0.14
+  device_preview: ^1.1.0
 dev_dependencies:
   flutter_test:
     sdk: flutter
