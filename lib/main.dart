@@ -13,6 +13,7 @@ import 'package:dronemission/pathing.dart';
 import 'package:dronemission/otp_screen.dart';
 import 'package:dronemission/marker_factory.dart';
 import 'package:dronemission/slidebar_widget.dart';
+import 'package:dronemission/image_tile_overlay.dart';
 import 'clock_widget.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:draggable_widget/draggable_widget.dart';
@@ -105,6 +106,10 @@ class _MyAppState extends State<MyApp> {
 
   // Random number generator instance
   static final random = Random();
+
+  final ImageTileProvider tileProvider = ImageTileProvider(
+    imageUrl: 'http://134.197.62.248:8000/images/mines',
+  );
 
   // Callback function when the map is created
   void _onMapCreated(GoogleMapController controller) {
@@ -461,6 +466,13 @@ class _MyAppState extends State<MyApp> {
                         }),
                   ));
                 });
+              },
+              tileOverlays: {
+                TileOverlay(
+                  tileProvider: tileProvider,
+                  tileOverlayId: const TileOverlayId('1'),
+                  zIndex: 100,
+                ),
               },
             ),
             Column(
