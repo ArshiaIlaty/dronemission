@@ -190,6 +190,13 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "2.0.0"
+  dropdown_search:
+    dependency: "direct main"
+    description:
+      name: dropdown_search
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "5.0.6"
   fake_async:
     dependency: transitive
     description:
@@ -211,6 +218,13 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "6.1.4"
+  file_picker:
+    dependency: "direct main"
+    description:
+      name: file_picker
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "5.3.1"
   firebase_auth:
     dependency: "direct main"
     description:
@@ -326,6 +340,20 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "4.0.1"
+  flutter_staggered_animations:
+    dependency: "direct main"
+    description:
+      name: flutter_staggered_animations
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "1.1.1"
+  flutter_staggered_grid_view:
+    dependency: "direct main"
+    description:
+      name: flutter_staggered_grid_view
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "0.6.2"
   flutter_svg:
     dependency: transitive
     description:
@@ -574,6 +602,13 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "3.1.1"
+  logger:
+    dependency: "direct main"
+    description:
+      name: logger
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "1.4.0"
   logging:
     dependency: transitive
     description:
