@@ -1,3 +1,4 @@
+import 'package:dronemission/slidebar_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -5,15 +6,34 @@ import 'package:file_picker/file_picker.dart';
 import 'package:dropdown_search/dropdown_search.dart';
 import 'package:logger/logger.dart';
 
+import 'clock_widget.dart';
+
+extension RouterContext on BuildContext {
+  //{} this means optional argument in this section, this helps us to send data for some of our navigations
+  toNamed(String routeName, {Object? arg}) {
+    Navigator.of(this).pushNamed(routeName, arguments: arg);
+  }
+  toNamedUntil(String routeName) {
+    Navigator.of(this).pushNamedAndRemoveUntil(routeName, (route) => false);
+  } 
+  toPushReplacement(Widget page) {
+    Navigator.of(this).pushReplacement(MaterialPageRoute(builder: (context) => page));
+  } 
+  // push(Widget page) {
+  //   Navigator.of(this).push(MaterialPageRoute(builder: (context) => page));
+  // }
+}
+
 // learning extention methods and widget in order to make a custom change in the others' library
 extension CustomString on String {
   get firstLetterAndSecondLetter {
     return this[0] + this[1];
   }
 }
+
 // This approach helps us to write more clear and readable code and prevent of repeating the same code
-extension MyExtention on Text{
-  Container addBox(){
+extension MyExtention on Text {
+  Container addBox() {
     return Container(
       child: this,
       padding: EdgeInsets.all(10),
@@ -25,6 +45,7 @@ extension MyExtention on Text{
     );
   }
 }
+
 //Learning about the draggable widget
 class DraggableWidget extends StatefulWidget {
   const DraggableWidget({Key? key}) : super(key: key);
@@ -32,6 +53,7 @@ class DraggableWidget extends StatefulWidget {
   @override
   State<DraggableWidget> createState() => _DraggableWidgetState();
 }
+
 class _DraggableWidgetState extends State<DraggableWidget> {
   Color acceptedColor = Colors.grey;
   @override
@@ -48,7 +70,10 @@ class _DraggableWidgetState extends State<DraggableWidget> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Merged Widget', style: GoogleFonts.acme(),),
+        title: Text(
+          'Merged Widget',
+          style: GoogleFonts.acme(),
+        ),
       ),
       body: SizedBox(
         height: double.infinity,
@@ -57,68 +82,6 @@ class _DraggableWidgetState extends State<DraggableWidget> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-
-            Center(
-              child: DropdownSearch<String>(
-                popupProps: PopupProps.menu(
-                  showSelectedItems: true,
-                  showSearchBox: true,
-                  searchFieldProps: TextFieldProps(
-                    decoration: InputDecoration(
-                      border: OutlineInputBorder(
-                         borderSide: BorderSide(color: Colors.grey, width: 1.0),
-                         borderRadius: BorderRadius.circular(10.0),
-                      ),
-                      prefixIcon: Icon(Icons.search),
-                      hintText: "Search a country",
-                    enabledBorder: OutlineInputBorder(
-                      borderSide: BorderSide(color: Colors.grey, width: 1.0),
-                    ),
-                    ),
-                    ),
-                  ),
-                  items: ["Brazil", "Italia (Disabled)", "Tunisia", 'Canada'],
-                  onChanged: (value) => print(value),
-                  selectedItem: "Brazil",
-
-                  //Decorate the first actual search box you will see on the screen
-                  dropdownDecoratorProps: DropDownDecoratorProps(
-                    dropdownSearchDecoration: InputDecoration(
-                      border: OutlineInputBorder(
-                        borderSide: BorderSide(color: Colors.grey, width: 1.0),
-                        borderRadius: BorderRadius.circular(10.0),
-                      ),
-                      prefixIcon: Icon(Icons.search),
-                      hintText: "Search a country",
-                      enabledBorder: OutlineInputBorder(
-                        borderSide: BorderSide(color: Colors.grey, width: 1.0),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-        
-
-            Center(
-              child: ElevatedButton(
-                onPressed: () async {
-                  FilePickerResult? result = await FilePicker.platform.pickFiles(allowMultiple: true, type: FileType.custom, allowedExtensions: ['jpg', 'pdf', 'doc'],);
-                  if(result != null) {
-                    //File fiile = File(result.files.single.path);
-                    PlatformFile file = result.files.first;
-                    print(file.name);
-                    print(file.bytes);
-                    print(file.size);
-                    print(file.extension);
-                    print(file.path);
-                  } else {
-                    // User canceled the picker
-
-                  }
-                },
-                child: Text("Pick Your File"),
-              ),
-            ),
 
 // rating bar implementation
             Center(
